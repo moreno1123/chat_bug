@@ -5,21 +5,18 @@ import { ChatOpenAI } from "langchain/chat_models/openai";
 import { ConversationalRetrievalQAChain } from "langchain/chains";
 import { NextResponse } from "next/server";
 import { StreamingTextResponse, LangChainStream } from "ai";
+import axios from "axios";
+import vector from "@/app/lib/vector";
 
-export const runtime = 'edge';
+// export const runtime = 'edge';
 
 export async function POST(req:Request) {
   try {
     const { stream, handlers } = LangChainStream();
   
-    const vectorStore = await Chroma.fromExistingCollection(
-      new OpenAIEmbeddings(),
-      {
-        url: env.CHROMA_DB_SERVER,
-        collectionName: "b5877065-aa52-4641-93ef-98966b3deb11",
-      },
-    );
-  
+    const vectorStore = await vector()
+    console.log(vectorStore)
+
     const streamingModel = new ChatOpenAI({
       temperature: 0,
       modelName: 'gpt-3.5-turbo',
@@ -39,6 +36,6 @@ export async function POST(req:Request) {
 
     return new StreamingTextResponse(stream);
   } catch (error:any) {
-    return NextResponse.json({error: error.toString()},{status:500});
+    return NextResponse.json({message: "chat_with_edge",error: error.toString()},{status:500});
   }
 }
