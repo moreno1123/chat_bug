@@ -8,7 +8,7 @@ import { StreamingTextResponse, LangChainStream } from "ai";
 import axios from "axios";
 import vector from "@/app/lib/vector";
 
-// export const runtime = 'edge';
+export const runtime = 'edge';
 
 export async function POST(req:Request) {
   try {
