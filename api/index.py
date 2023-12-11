@@ -20,9 +20,11 @@ import openai
 from llama_index.llms import ChatMessage, MessageRole
 from llama_index.prompts import ChatPromptTemplate
 from llama_index.memory import ChatMemoryBuffer
-
+import logging
 import sys
 
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
 sys.stdout.reconfigure(encoding="utf-8")
 from dotenv import load_dotenv
 
@@ -64,7 +66,7 @@ text_qa_template = ChatPromptTemplate(chat_text_qa_msgs)
 system_prompt = """
 - You are an Croatian AI assistant that answers questions in a friendly manner.
 - Provide always a detailed information about the question, which was asked.
-- If the question is not related to the source documents, answer that "you cannot provide the answer"
+- It is very important that if the question is not related to the source documents, always answer that "you cannot provide the answer"
 - Always resond in Croatian language
 """
 
@@ -139,11 +141,10 @@ def chat():
 
     # set service context
     service_context = ServiceContext.from_defaults(
-        llm=OpenAI(model="gpt-3.5-turbo", temperature=0, streaming=True),
+        llm=OpenAI(model="gpt-3.5-turbo", temperature=0),
         embed_model=embed_model,
-        system_prompt=system_prompt,
+        system_prompt="You are a helpfull assistant and you job is to help the user get his information in a helpful way. It is very important that you only answer question which are related to the context and if the are not answer that you cannot provide the answer",
     )
-    # set_global_service_context(service_context)
 
     # set vector store index
     index = VectorStoreIndex.from_vector_store(
@@ -158,13 +159,23 @@ def chat():
     memory = ChatMemoryBuffer.from_defaults()
 
     chat_engine = index.as_chat_engine(
-        chat_mode="context", verbose=True, system_prompt=system_prompt, memory=memory
+        chat_mode="context",
+        system_prompt=system_prompt,
+        memory=memory,
     )
-    response = chat_engine.chat("Koji je glavni grad Hrvatske?")
-    print(response)
+    response = chat_engine.stream_chat("o cemu se radi u kontekstu?")
+    for token in response.response_gen:
+        print("bok")
+        print(token)
 
-    response = chat_engine.chat("Što mogu posjetiti tamo?")
-    print(response)
+    for key, value in response.response_gen.items():
+        print(f"{key}: {value}")
+
+    # response = chat_engine.chat("Koji je glavni grad Hrvatske?")
+    # print(response.response_gen)
+
+    # response = chat_engine.chat("Što mogu posjetiti tamo?")
+    # print(response)
 
     # response = chat_engine.chat("Reci mi više o tome")
     # print(response)
